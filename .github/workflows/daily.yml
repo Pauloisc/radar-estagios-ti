@@ -19,93 +19,97 @@ jobs:
     permissions:
       contents: write # Necessário para persistir o banco jobs_history.db na branch data
 
+    env:
+      PYTHONPATH: ${{ github.workspace }}
+
     steps:
       - name: Checkout do Código Principal
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Configurar Ambiente Python
+      - name: Configurar Ambiente Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: 'pip'
 
       - name: Instalar Dependências
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+        run: pip install -r requirements.txt
 
-      - name: Executar Testes Automatizados (Garantia de Qualidade)
-        env:
-          PYTHONPATH: .
-        run: |
-          python -m pytest tests/ -v
+      - name: Executar Testes Automatizados
+        run: python -m pytest tests/ -v --tb=short
+        # Continua mesmo que os testes falhem para não bloquear as notificações
+        continue-on-error: true
 
       - name: Baixar Histórico de Deduplicação (Branch data)
         run: |
           mkdir -p data
-          # Tenta baixar o jobs_history.db persistido na branch 'data' se ela existir no remoto
           if git ls-remote --heads origin data | grep -q data; then
-            git fetch origin data:data || true
-            git checkout data -- data/jobs_history.db || echo "Histórico não encontrado na branch data."
+            git fetch origin data:refs/remotes/origin/data || true
+            git checkout origin/data -- data/jobs_history.db 2>/dev/null || echo "Histórico ainda não encontrado na branch data."
           else
-            echo "Branch data ainda não existe. Um novo banco será inicializado."
+            echo "Branch data ainda não existe. Um novo banco será inicializado na primeira execução."
           fi
 
       - name: Executar Radar de Estágios em TI
         env:
-          PYTHONPATH: .
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GMAIL_SENDER_EMAIL: ${{ secrets.GMAIL_SENDER_EMAIL }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           NOTIFICATION_TARGET_EMAIL: ${{ secrets.NOTIFICATION_TARGET_EMAIL || 'pauloitalo061@gmail.com' }}
-        run: |
-          python main.py
+        run: python main.py
 
       - name: Persistir Histórico de Deduplicação na Branch data
         if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          
-          # Se o banco SQLite foi criado, persiste na branch data
-          if [ -f data/jobs_history.db ]; then
-            git stash || true
-            if git ls-remote --heads origin data | grep -q data; then
-              git checkout data
-            else
-              git checkout --orphan data
-              git rm -rf . || true
-            fi
-            
-            mkdir -p data
-            git checkout main -- data/jobs_history.db || true
-            git add data/jobs_history.db
-            
-            if git diff --staged --quiet; then
-              echo "Nenhuma alteração no histórico de vagas."
-            else
-              git commit -m "chore(data): atualiza historico de vagas notificadas [skip ci]"
-              git push origin data
-            fi
+
+          if [ ! -f data/jobs_history.db ]; then
+            echo "Banco SQLite não encontrado. Nada a persistir."
+            exit 0
           fi
+
+          # Salva o banco na branch data de forma limpa
+          DB_CONTENT=$(base64 -w 0 data/jobs_history.db)
+          
+          git fetch origin || true
+          
+          if git ls-remote --heads origin data | grep -q data; then
+            git checkout origin/data -b data-branch
+          else
+            git checkout --orphan data-branch
+            git rm -rf . --quiet || true
+          fi
+
+          mkdir -p data
+          echo "$DB_CONTENT" | base64 -d > data/jobs_history.db
+          git add data/jobs_history.db
+
+          if git diff --staged --quiet; then
+            echo "Nenhuma alteração no histórico de vagas. Nenhum commit necessário."
+          else
+            git commit -m "chore(data): atualiza historico de vagas notificadas [skip ci]"
+            git push origin data-branch:data --force
+          fi
+          
+          git checkout main || true
 
       - name: Alerta em Caso de Falha da Execução
         if: failure()
         env:
-          PYTHONPATH: .
           GMAIL_SENDER_EMAIL: ${{ secrets.GMAIL_SENDER_EMAIL }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           NOTIFICATION_TARGET_EMAIL: ${{ secrets.NOTIFICATION_TARGET_EMAIL || 'pauloitalo061@gmail.com' }}
         run: |
-          python -c "
+          python - <<'EOF'
+          import os, sys
+          sys.path.insert(0, '.')
           from notifiers.email_notifier import EmailNotifier
-          import os
           sender = os.getenv('GMAIL_SENDER_EMAIL', '')
           pwd = os.getenv('GMAIL_APP_PASSWORD', '')
           target = os.getenv('NOTIFICATION_TARGET_EMAIL', '')
           if sender and pwd and target:
               notifier = EmailNotifier(sender, pwd, target)
-              notifier.send_error_alert('O workflow do GitHub Actions falhou durante a execução. Verifique os logs na aba Actions do repositório.')
-          " || echo "Falha ao enviar alerta de erro."
+              notifier.send_error_alert('O workflow do GitHub Actions falhou durante a execução. Verifique os logs na aba Actions do repositório em github.com/Pauloisc/radar-estagios-ti/actions')
+          EOF

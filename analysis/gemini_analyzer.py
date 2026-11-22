@@ -11,7 +11,7 @@ class JobAnalyzer:
     caso a chave não esteja configurada ou haja instabilidade.
     """
 
-    def __init__(self, api_key: str, model_name: str = "gemini-1.5-flash", profile: Dict[str, Any] = None):
+    def __init__(self, api_key: str, model_name: str = "gemini-2.0-flash", profile: Dict[str, Any] = None):
         self.api_key = api_key
         self.model_name = model_name
         self.profile = profile or {}
@@ -19,14 +19,15 @@ class JobAnalyzer:
 
         if self.api_key:
             try:
-                import google.generativeai as genai
-                genai.configure(api_key=self.api_key)
-                self.client = genai.GenerativeModel(
-                    model_name=self.model_name,
-                    generation_config={"response_mime_type": "application/json"}
-                )
+                # Usa o novo SDK google-genai (substituto do google-generativeai descontinuado)
+                from google import genai
+                from google.genai import types
+                self._genai = genai
+                self._types = types
+                self.client = genai.Client(api_key=self.api_key)
+                logger.info(f"Cliente Google Gemini inicializado com modelo {self.model_name}.")
             except Exception as e:
-                logger.warning(f"Não foi possível inicializar o cliente Google Generative AI: {e}")
+                logger.warning(f"Não foi possível inicializar o cliente Google Gemini: {e}. Usando fallback heurístico.")
 
     def analyze(self, job: Dict[str, Any]) -> AnaliseVagaCompleta:
         """Executa a análise de compatibilidade e gera o plano de adaptação."""
@@ -59,8 +60,8 @@ Analise a vaga de estágio abaixo com base no currículo real do candidato.
 2. Identifique pontos fortes citando projetos e tecnologias específicas do Paulo (ex.: React, Java, C/Grafos, Monitoria, Lectria).
 3. Aponte lacunas reais.
 4. No plano de adaptação, NÃO invente experiências. Recomende como evidenciar o que ele já sabe e liste o que aprender com sugestões de materiais gratuitos de qualidade.
-5. Se o horário for ambíguo ou não informado, inclua o alerta apropriado.
-6. A saída DEVE ser estritamente em JSON compatível com o schema:
+5. Se o horário for ambíguo ou não informado, inclua o alerta apropriado nos alertas.
+6. A saída DEVE ser estritamente em JSON compatível com o schema abaixo. Não inclua markdown ou texto fora do JSON:
 {{
   "compatibilidade": {{
     "score": 85,
@@ -82,7 +83,13 @@ Analise a vaga de estágio abaixo com base no currículo real do candidato.
 
     def _analyze_with_gemini(self, job: Dict[str, Any]) -> AnaliseVagaCompleta:
         prompt = self._build_prompt(job)
-        response = self.client.generate_content(prompt)
+        response = self.client.models.generate_content(
+            model=self.model_name,
+            contents=prompt,
+            config=self._types.GenerateContentConfig(
+                response_mime_type="application/json"
+            )
+        )
         data = json.loads(response.text)
         return AnaliseVagaCompleta.model_validate(data)
 
@@ -102,7 +109,7 @@ Analise a vaga de estágio abaixo com base no currículo real do candidato.
             "javascript": ("JavaScript", "Domínio de JS moderno e desenvolvimento web"),
             "python": ("Python", "Uso de Python e IA no Projeto Lectria"),
             "java": ("Java", "Projeto Portal da Fenda e fundamentos sólidos de POO"),
-            "c": ("Linguagem C", "Conhecimento avançado em C e estruturas de dados na Maratona SBC"),
+            " c ": ("Linguagem C", "Conhecimento avançado em C e estruturas de dados na Maratona SBC"),
             "sql": ("SQL/Banco de Dados", "Bancos relacionais e modelagem"),
             "git": ("Git/GitHub", "Controle de versão e gestão com GitHub Projects")
         }
@@ -112,7 +119,7 @@ Analise a vaga de estágio abaixo com base no currículo real do candidato.
                 score += 8
                 pontos_fortes.append(f"{nome_tec}: {detalhe}")
 
-        if "estágio" in titulo:
+        if "estagio" in titulo or "estágio" in titulo:
             score += 10
 
         score = min(score, 95)
@@ -135,7 +142,7 @@ Analise a vaga de estágio abaixo com base no currículo real do candidato.
             compatibilidade=AnaliseCompatibilidade(
                 score=score,
                 classificacao=classificacao,
-                justificativa_score=f"Score calculado com base na presença de requisitos alinhados ao seu perfil acadêmico e projetos.",
+                justificativa_score="Score calculado com base na presença de requisitos alinhados ao seu perfil acadêmico e projetos.",
                 pontos_fortes=pontos_fortes,
                 lacunas=lacunas
             ),
