@@ -1,0 +1,101 @@
+name: Radar Diario de Estagios em TI
+
+on:
+  schedule:
+    # 06:00 em Aracaju/SE (America/Maceio, UTC-3, sem horário de verão)
+    # 06:00 UTC-3 = 09:00 UTC
+    - cron: '0 9 * * *'
+  workflow_dispatch: # Permite disparo manual sob demanda pela interface do GitHub
+
+concurrency:
+  group: radar-estagios-daily
+  cancel-in-progress: false
+
+jobs:
+  run-radar:
+    name: Coletar e Notificar Vagas de Estágio
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write # Necessário para persistir o banco jobs_history.db na branch data
+
+    steps:
+      - name: Checkout do Código Principal
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Configurar Ambiente Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Instalar Dependências
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Executar Testes Automatizados (Garantia de Qualidade)
+        run: |
+          pytest tests/ -v
+
+      - name: Baixar Histórico de Deduplicação (Branch data)
+        run: |
+          mkdir -p data
+          # Tenta baixar o jobs_history.db persistido na branch 'data'
+          git fetch origin data:data || true
+          git checkout data -- data/jobs_history.db || echo "Nenhum histórico anterior encontrado na branch data. Um novo banco será inicializado."
+
+      - name: Executar Radar de Estágios em TI
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GMAIL_SENDER_EMAIL: ${{ secrets.GMAIL_SENDER_EMAIL }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          NOTIFICATION_TARGET_EMAIL: ${{ secrets.NOTIFICATION_TARGET_EMAIL || 'pauloitalo061@gmail.com' }}
+        run: |
+          python main.py
+
+      - name: Persistir Histórico de Deduplicação na Branch data
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Garante a existência da branch data
+          git fetch origin
+          if git ls-remote --heads origin data | grep -q data; then
+            git checkout data
+          else
+            git checkout --orphan data
+            git rm -rf .
+          fi
+
+          # Atualiza o arquivo de dados
+          git checkout main -- data/
+          git add data/jobs_history.db
+          
+          if git diff --staged --quiet; then
+            echo "Nenhuma alteração no histórico de vagas."
+          else
+            git commit -m "chore(data): atualiza historico de vagas notificadas [skip ci]"
+            git push origin data
+          fi
+
+      - name: Alerta em Caso de Falha da Execução
+        if: failure()
+        env:
+          GMAIL_SENDER_EMAIL: ${{ secrets.GMAIL_SENDER_EMAIL }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          NOTIFICATION_TARGET_EMAIL: ${{ secrets.NOTIFICATION_TARGET_EMAIL || 'pauloitalo061@gmail.com' }}
+        run: |
+          python -c "
+          from notifiers.email_notifier import EmailNotifier
+          import os
+          notifier = EmailNotifier(
+              os.getenv('GMAIL_SENDER_EMAIL', ''),
+              os.getenv('GMAIL_APP_PASSWORD', ''),
+              os.getenv('NOTIFICATION_TARGET_EMAIL', '')
+          )
+          notifier.send_error_alert('O workflow do GitHub Actions falhou durante a execução diária do Radar de Estágios. Verifique os logs na aba Actions do repositório.')
+          " || echo "Falha ao enviar alerta de erro."

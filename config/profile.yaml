@@ -1,0 +1,113 @@
+# Perfil profissional de Paulo Ítalo Santos Costa
+# Utilizado pelo analisador de IA para calcular compatibilidade e sugerir adaptações.
+
+usuario:
+  nome: "Paulo Ítalo Santos Costa"
+  email: "pauloitalo061@gmail.com"
+  whatsapp: "+55 79 99802-3920"
+  cidade: "Aracaju"
+  estado: "SE"
+  bairro: "Siqueira Campos"
+  objetivo: "Estágio em Tecnologia da Informação"
+
+academico:
+  curso: "Bacharelado em Sistemas de Informação"
+  instituicao: "Universidade Federal de Sergipe (UFS)"
+  campus: "Itabaiana"
+  periodo_atual: 6
+  restricao_horario:
+    descricao: "Estuda no campus de Itabaiana e só chega em casa em Aracaju entre 12:30 e 14:00."
+    inicio_minimo_permitido: "12:30"
+    turnos_permitidos:
+      - "tarde"
+      - "noite"
+      - "flexivel"
+    turnos_proibidos:
+      - "manha"
+      - "integral"
+
+competencias:
+  linguagens:
+    - "C"
+    - "C++"
+    - "Java"
+    - "Python"
+    - "JavaScript"
+  web_frontend:
+    - "HTML"
+    - "CSS"
+    - "JavaScript"
+    - "React"
+  banco_de_dados:
+    - "SQL"
+    - "MySQL Workbench"
+  ferramentas_e_metodologias:
+    - "Git"
+    - "GitHub"
+    - "GitHub Projects"
+    - "Trello"
+    - "StarUML"
+    - "Bizagi"
+  design_multimidia:
+    - "Canva"
+    - "Sony Vegas"
+    - "Photoshop"
+  fundamentos_computacao:
+    - "Programação Orientada a Objetos (POO)"
+    - "Estruturas de Dados"
+    - "Algoritmos (Backtracking, Grafos)"
+  idiomas:
+    - idioma: "Inglês"
+      nivel: "Intermediário (B1)"
+
+experiencias:
+  - titulo: "Monitoria em Programação 1"
+    instituicao: "UFS"
+    descricao: "Ensino de lógica e fundamentos para calouros, resolução de exercícios práticos e criação de materiais didáticos."
+    habilidades_destacadas:
+      - "Didática e Comunicação"
+      - "Lógica de Programação"
+      - "Trabalho em Equipe"
+
+  - titulo: "Competidor na Maratona SBC de Programação"
+    ano: 2026
+    descricao: "Resolução de problemas algorítmicos complexos sob estrita pressão de tempo."
+    habilidades_destacadas:
+      - "Estruturas de Dados Avançadas"
+      - "Resolução de Problemas sob Pressão"
+      - "Otimização de Algoritmos"
+
+projetos:
+  - nome: "Calculadora de Custo – Portal da Fenda"
+    linguagem: "Java"
+    descricao: "Calcula custo de composições de times de personagens de um jogo; usada e validada em evento comunitário no Discord."
+    conceitos: ["POO", "Lógica de Negócio", "Validação de Dados"]
+
+  - nome: "Calculadora de Custo – Portal da Fenda WEB"
+    linguagem: "JavaScript / React"
+    descricao: "Versão web moderna com interface visual interativa para cálculo e comparação de custos de composições."
+    conceitos: ["React Hooks", "Componentização", "Frontend Responsivo", "UI/UX"]
+
+  - nome: "Backtracking – Pontos Marcados"
+    linguagem: "C"
+    descricao: "Gera grafos de cidades aleatórias e calcula a menor rota possível utilizando backtracking com poda de busca."
+    conceitos: ["Teoria dos Grafos", "Algoritmos Exaustivos", "Otimização de Memória e Desempenho"]
+
+  - nome: "Colaboração no Projeto Lectria"
+    linguagem: "Python"
+    descricao: "Automação para criação de livros didáticos a partir de videoaulas utilizando IA multimodal (Google Gemini)."
+    conceitos: ["Engenharia de Prompt", "Integração com Gemini API", "Processamento Automatizado de Conteúdo"]
+
+cursos:
+  - nome: "POO, Python OO e Site com HTML/CSS/JS"
+    instituicao: "Fundação Bradesco"
+    ano: 2025
+  - nome: "Inglês Módulo 1 (60h)"
+    instituicao: "Instituto Federal de Sergipe (IFS)"
+    ano: 2025
+  - nome: "Python Básico"
+    instituicao: "Fundação Bradesco"
+    ano: 2024
+  - nome: "Introdução a Algoritmos"
+    instituicao: "UFS"
+    ano: 2024

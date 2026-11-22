@@ -1,0 +1,126 @@
+# Configurações operacionais do Radar de Estágios em TI
+
+geral:
+  nome_sistema: "Radar de Estágios em TI"
+  timezone: "America/Maceio"
+  banco_sqlite: "data/jobs_history.db"
+  dias_retencao_historico: 180
+
+filtros:
+  termos_obrigatorios_estagio:
+    - "estágio"
+    - "estagio"
+    - "estagiário"
+    - "estagiario"
+    - "intern"
+    - "internship"
+
+  termos_descarte_tipo:
+    - "jovem aprendiz"
+    - "menor aprendiz"
+    - "trainee"
+    - "clt"
+    - "pj"
+    - "efetivo"
+    - "analista pleno"
+    - "analista sênior"
+    - "analista senior"
+    - "desenvolvedor pleno"
+    - "desenvolvedor sênior"
+    - "desenvolvedor senior"
+    - "coordenador"
+    - "gerente"
+    - "diretor"
+
+  areas_ti_permitidas:
+    - "desenvolvimento"
+    - "desenvolvedor"
+    - "software"
+    - "engenharia de software"
+    - "web"
+    - "frontend"
+    - "front-end"
+    - "backend"
+    - "back-end"
+    - "fullstack"
+    - "full stack"
+    - "mobile"
+    - "react"
+    - "python"
+    - "java"
+    - "javascript"
+    - "dados"
+    - "data"
+    - "business intelligence"
+    - "bi"
+    - "qa"
+    - "testes"
+    - "qualidade de software"
+    - "suporte"
+    - "suporte técnico"
+    - "help desk"
+    - "service desk"
+    - "infraestrutura"
+    - "infra"
+    - "redes"
+    - "devops"
+    - "cloud"
+    - "segurança da informação"
+    - "cybersecurity"
+    - "banco de dados"
+    - "dba"
+    - "inteligência artificial"
+    - "ia"
+    - "machine learning"
+    - "automação"
+    - "sistemas de informação"
+    - "ti"
+
+  localizacao:
+    cidade_obrigatoria_presencial: "aracaju"
+    estado_obrigatorio_presencial: "se"
+    permitir_remoto_brasil: true
+
+  horario:
+    hora_minima_inicio: "12:30"
+    turnos_descartar:
+      - "manha"
+      - "integral"
+    turnos_aceitos:
+      - "tarde"
+      - "noite"
+      - "flexivel"
+      - "desconhecido"
+
+notificacao:
+  email:
+    destinatario: "pauloitalo061@gmail.com"
+    enviar_email_sem_vagas: true
+    enviar_email_alerta_erro: true
+    ordenar_por_score: true
+  whatsapp:
+    habilitado: false
+    motivo_desabilitado: "WhatsApp Business Cloud API exige verificação corporativa Meta/cartão de crédito e APIs não-oficiais violam os Termos de Serviço da Meta arriscando o banimento do número."
+
+fontes:
+  gupy:
+    ativo: true
+    max_paginas_por_termo: 3
+    termos_busca:
+      - "estágio ti aracaju"
+      - "estágio tecnologia aracaju"
+      - "estágio desenvolvimento aracaju"
+      - "estágio suporte aracaju"
+      - "estágio software remoto"
+      - "estágio desenvolvedor remoto"
+      - "estágio ti remoto"
+      - "estágio python remoto"
+      - "estágio react remoto"
+      - "estágio front-end remoto"
+      - "estágio dados remoto"
+  remotar:
+    ativo: true
+  ciee_iel_locais:
+    ativo: true
+  adzuna_ou_agregador:
+    ativo: true
